@@ -51,25 +51,33 @@ namespace ExcelAddIn
                 string response = e.Result;
                 DataTable xmlData = Newtonsoft.Json.JsonConvert.DeserializeObject<DataTable>(response);
                 //DataTable dtObj = new DataTable("MyExcel");
-                foreach (DataColumn cols in xmlData.Columns)
+                try
                 {
-                    newFirstRow.Value2 = cols.ColumnName;
-                    newFirstRow = newFirstRow.Next;
+                    activeWorksheet.UsedRange.ClearContents();
+                    foreach (DataColumn cols in xmlData.Columns)
+                    {
+                        newFirstRow.Value2 = cols.ColumnName;
+                        newFirstRow = newFirstRow.Next;
+                    }
+                    newFirstRow = activeWorksheet.Cells[firstRow.Row + 1, firstRow.Column];
+                    object[] data = new object[xmlData.Columns.Count];
+                    foreach (DataRow dr in xmlData.Rows)
+                    {
+                        data = new object[xmlData.Columns.Count];
+                        data = dr.ItemArray;
+
+                        //= (Excel.Range)activeWorksheet.Cells[newFirstRow.Row, firstRow.Column]; ;
+                        Excel.Range newRangeData = newFirstRow.get_Resize(1, xmlData.Columns.Count);
+
+                        newRangeData.set_Value(Type.Missing, data);
+                        newFirstRow = activeWorksheet.Cells[newFirstRow.Row + 1, firstRow.Column];
+                    }
+                    firstRow.get_Offset(1, 1).get_Resize(xmlData.Rows.Count, xmlData.Columns.Count).Style = "Currency";
                 }
-                newFirstRow = activeWorksheet.Cells[firstRow.Row + 1, firstRow.Column];
-                object[] data = new object[xmlData.Columns.Count];
-                foreach (DataRow dr in xmlData.Rows)
+                catch(Exception ex)
                 {
-                    data = new object[xmlData.Columns.Count];
-                    data = dr.ItemArray;
-
-                    //= (Excel.Range)activeWorksheet.Cells[newFirstRow.Row, firstRow.Column]; ;
-                    Excel.Range newRangeData = newFirstRow.get_Resize(1, xmlData.Columns.Count);
-
-                    newRangeData.set_Value(Type.Missing, data);
-                    newFirstRow = activeWorksheet.Cells[newFirstRow.Row + 1, firstRow.Column];
+                    firstRow.Value2 = "An Error occured while performing operation on the excel";
                 }
-                firstRow.get_Offset(1, 1).get_Resize(xmlData.Rows.Count, xmlData.Columns.Count).Style = "Currency";
             }
             else
             {
